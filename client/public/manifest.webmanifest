@@ -1,0 +1,12 @@
+{
+  "name": "Trueque — moneda que nace del intercambio",
+  "short_name": "Trueque",
+  "description": "Intercambiá artículos y servicios con créditos que nacen del propio intercambio. Sin dinero de bancos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#171412",
+  "theme_color": "#171412",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
