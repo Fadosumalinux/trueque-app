@@ -36,6 +36,37 @@ export interface User {
   zone?: { id: string; name: string; region: string } | null;
 }
 
+export interface TradeMode {
+  id: string;
+  name: string;
+  description?: string;
+  type: "barter" | "sale" | "auction" | "custom";
+  isPreset: boolean;
+  createdById?: string;
+  audienceScope: "public" | "verified" | "zone" | "invite";
+  allowBarter: boolean;
+  allowFieles: boolean;
+  minBid?: number | null;
+  maxBid?: number | null;
+  bidStep?: number | null;
+  durationHours?: number | null;
+  maxParticipants?: number | null;
+  isActive: boolean;
+  createdBy?: { id: string; displayName: string; avatarUrl?: string };
+}
+
+export interface Bid {
+  id: string;
+  listingId: string;
+  bidderId: string;
+  amount: number;
+  article?: string | null;
+  note?: string | null;
+  status: string;
+  createdAt: string;
+  bidder: { id: string; displayName: string; avatarUrl?: string; verificationStatus: string };
+}
+
 export interface Listing {
   id: string;
   userId: string;
@@ -46,6 +77,17 @@ export interface Listing {
   estimatedValue: number;
   currency: "credits" | "barter" | "both";
   status: string;
+  mode?: TradeMode | null;
+  audienceScope?: string | null;
+  allowBarter?: boolean;
+  allowFieles?: boolean;
+  minBid?: number | null;
+  maxBid?: number | null;
+  bidStep?: number | null;
+  auctionStart?: string | null;
+  auctionEnd?: string | null;
+  maxParticipants?: number | null;
+  bids?: Bid[];
   likeCount?: number;
   category: Category;
   zone: { id: string; name: string; multiplier: number };

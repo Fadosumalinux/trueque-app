@@ -20,19 +20,19 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
     return;
   }
   if (exchange.status !== "completed") {
-    res.status(400).json({ error: "Solo se pueden reseñar trueques completados" });
+    res.status(400).json({ error: "Solo se pueden reseñar pactos completados" });
     return;
   }
   if (![exchange.fromUserId, exchange.toUserId].includes(req.userId!)) {
-    res.status(403).json({ error: "No participaste en este trueque" });
+    res.status(403).json({ error: "No participaste en este pacto" });
     return;
   }
   if (![exchange.fromUserId, exchange.toUserId].includes(revieweeId)) {
-    res.status(400).json({ error: "Solo podés reseñar a otra parte del trueque" });
+    res.status(400).json({ error: "Solo podés reseñar a otra parte del pacto" });
     return;
   }
   if (exchange.reviews.some((r) => r.reviewerId === req.userId)) {
-    res.status(400).json({ error: "Ya dejaste una reseña en este trueque" });
+    res.status(400).json({ error: "Ya dejaste una reseña en este pacto" });
     return;
   }
 

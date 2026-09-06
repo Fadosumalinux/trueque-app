@@ -11,13 +11,15 @@ import deliveryRoutes from "./routes/deliveries.js";
 import reviewRoutes from "./routes/reviews.js";
 import walletRoutes from "./routes/wallet.js";
 import notificationRoutes from "./routes/notifications.js";
+import modeRoutes from "./routes/modes.js";
+import bidRoutes from "./routes/bids.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", game: "trueque-app", version: "1.0.0" });
+  res.json({ status: "ok", game: "pacto-app", version: "1.0.0" });
 });
 
 app.use("/api/auth", authRoutes);
@@ -30,6 +32,8 @@ app.use("/api/deliveries", deliveryRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/modes", modeRoutes);
+app.use("/api/bids", bidRoutes);
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
@@ -37,5 +41,5 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 app.listen(config.port, () => {
-  console.log(`🔄  Trueque App running at http://localhost:${config.port}`);
+  console.log(`🔄  Pacto app running at http://localhost:${config.port}`);
 });

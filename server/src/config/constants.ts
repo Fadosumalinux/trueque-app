@@ -3,7 +3,7 @@ dotenv.config();
 
 export const config = {
   port: Number(process.env.PORT || 3002),
-  jwtSecret: process.env.JWT_SECRET || "trueque-local-secret-2026",
+  jwtSecret: process.env.JWT_SECRET || "pacto-local-secret-2026",
   // "El valor de un café": comisión de la plataforma sobre el valor zonal.
   platformFeeRate: 0.03,
   // Carga de la comisión entre las partes. El total ingresa a la plataforma

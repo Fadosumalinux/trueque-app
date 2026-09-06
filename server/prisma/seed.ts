@@ -69,7 +69,7 @@ async function main() {
     },
     {
       id: "user-tito", email: "tito@demo.app", username: "tito", password: hash,
-      displayName: "Tito", role: "deliverer", bio: "Repartidor en bici. Llego hasta donde haga falta. Acepto créditos o una buena vianda.",
+      displayName: "Tito", role: "deliverer", bio: "Repartidor en bici. Llego hasta donde haga falta. Acepto fieles o una buena vianda.",
       avatarUrl: "https://api.dicebear.com/9.x/avataaars/svg?seed=tito",
       verificationStatus: "verified", biometricVerified: true, dniVerified: true,
       zoneId: "zone-la-boca", coverageZone: "Toda CABA + Lanús", maxTravelKm: 20,
@@ -92,10 +92,10 @@ async function main() {
     update: {},
     create: {
       id: "user-plataforma",
-      email: "plataforma@trueque.app",
+      email: "plataforma@pacto.app",
       username: "plataforma",
       password: hash,
-      displayName: "La Mesa Común",
+      displayName: "Pacto de Confianza",
       role: "user",
       bio: "Custodia el seguro de transacción y valida identidades.",
       verificationStatus: "verified",
@@ -110,48 +110,81 @@ async function main() {
   }
   console.log(`  ✓ ${users.length} demo users + plataforma`);
 
+  // Modos de comercio: plantillas de la app (preset, solo el creador puede editarlas)
+  const modes = [
+    {
+      id: "mode-trueque-directo", name: "Trueque directo", description: "Intercambiá artículo por artículo o con fieles de apoyo. El trato clásico de la app.",
+      type: "barter", isPreset: true, createdById: "user-plataforma", audienceScope: "public",
+      allowBarter: true, allowFieles: true, minBid: null, maxBid: null, bidStep: null, durationHours: 48, maxParticipants: null,
+    },
+    {
+      id: "mode-feria-fija", name: "Feria fija", description: "Precio firme en fieles, sin puja. Ideal para comerciantes y feriantes.",
+      type: "sale", isPreset: true, createdById: "user-plataforma", audienceScope: "public",
+      allowBarter: false, allowFieles: true, minBid: null, maxBid: null, bidStep: null, durationHours: null, maxParticipants: null,
+    },
+    {
+      id: "mode-subasta", name: "Subasta del barrio", description: "Puja abierta con horario: arranca, todos pujan y el mejor postor se queda con el artículo.",
+      type: "auction", isPreset: true, createdById: "user-plataforma", audienceScope: "public",
+      allowBarter: true, allowFieles: true, minBid: 50, maxBid: null, bidStep: 10, durationHours: 24, maxParticipants: null,
+    },
+  ];
+  for (const m of modes) {
+    await prisma.tradeMode.upsert({ where: { id: m.id }, update: m, create: m });
+  }
+  console.log(`  ✓ ${modes.length} trade modes (presets)`);
+
   const listings = [
     {
       id: "list-mesa", userId: "user-marta", categoryId: "cat-muebles", zoneId: "zone-nunez",
       type: "offer", title: "Mesa de roble maciza (4 sillas)",
       description: "Mesa familiar de 1.80m en excelente estado. Fue de mi abuela, necesita una casa nueva.",
-      acceptTerms: "Acepto caja de herramientas a estrenar o 180 créditos. También escucho ofertas de arte.",
+      acceptTerms: "Acepto caja de herramientas a estrenar o 180 fieles. También escucho ofertas de arte.",
       estimatedValue: zonalValue(200, 1.0), currency: "both", photos: JSON.stringify([]), status: "active",
     },
     {
       id: "list-consulta", userId: "user-ramiro", categoryId: "cat-salud", zoneId: "zone-nunez",
       type: "offer", title: "Consulta médica a domicilio",
       description: "Atención clínica general en casa. Recetario y seguimiento. Zona de cobertura: norte de CABA.",
-      acceptTerms: "Acepto pago en créditos (300) o trueque de alimentos y conservas por igual valor.",
+      acceptTerms: "Acepto pago en fieles (300) o trueque de alimentos y conservas por igual valor.",
       estimatedValue: zonalValue(300, 1.0), currency: "both", photos: JSON.stringify([]), status: "active",
     },
     {
       id: "list-reparto", userId: "user-tito", categoryId: "cat-logistica", zoneId: "zone-la-boca",
       type: "offer", title: "Reparto en bici (CABA + Lanús)",
       description: "Llevo y traigo cualquier cosa que entre en la bici. Cuidado esmerado de los paquetes.",
-      acceptTerms: "Cobro 25 créditos por entrega o una vianda/café en trueque. Escribime y coordinamos.",
+      acceptTerms: "Cobro 25 fieles por entrega o una vianda/café en trueque. Escribime y coordinamos.",
       estimatedValue: zonalValue(150, 0.85), currency: "both", photos: JSON.stringify([]), status: "active",
     },
     {
       id: "list-taladro", userId: "user-cacho", categoryId: "cat-herramientas", zoneId: "zone-la-boca",
       type: "offer", title: "Taladro inalámbrico + juego de mechas",
       description: "Funciona perfecto, batería nueva. Lo usé para mi laburo, está impecable.",
-      acceptTerms: "Cambio por parlante bluetooth o 120 créditos.",
+      acceptTerms: "Cambio por parlante bluetooth o 120 fieles.",
       estimatedValue: zonalValue(150, 0.85), currency: "both", photos: JSON.stringify([]), status: "active",
     },
     {
       id: "list-plantas", userId: "user-marta", categoryId: "cat-jardineria", zoneId: "zone-nunez",
       type: "want", title: "Busco quién plante un cantero",
       description: "Tengo las plantas y la tierra, necesito manos que me ayuden a armar el cantero del fondo.",
-      acceptTerms: "Ofrezco empanadas caseras (12 unidades) o 50 créditos.",
+      acceptTerms: "Ofrezco empanadas caseras (12 unidades) o 50 fieles.",
       estimatedValue: zonalValue(90, 1.0), currency: "both", photos: JSON.stringify([]), status: "active",
     },
     {
       id: "list-libros", userId: "user-ramiro", categoryId: "cat-libros", zoneId: "zone-nunez",
       type: "offer", title: "Colección de Borges + Cortázar",
       description: "12 libros usados en buen estado. Ideal para quien quiera literatura argentina.",
-      acceptTerms: "Cambio por vino artesanal o 90 créditos.",
+      acceptTerms: "Cambio por vino artesanal o 90 fieles.",
       estimatedValue: zonalValue(60, 1.0), currency: "both", photos: JSON.stringify([]), status: "active",
+    },
+    {
+      id: "list-reloj", userId: "user-cacho", categoryId: "cat-electronica", zoneId: "zone-la-boca",
+      type: "offer", title: "Reloj de pulsera automático (vintage)",
+      description: "Reloj mecánico suizo de los 80. Funciona perfecto, le ajusté el servicio hace un año.",
+      acceptTerms: "Se vende en subasta. Mínimo 80 fieles, incremento de 10.",
+      estimatedValue: zonalValue(400, 0.85), currency: "credits", photos: JSON.stringify([]), status: "active",
+      modeId: "mode-subasta",
+      audienceScope: "public", allowBarter: true, allowFieles: true,
+      minBid: 80, maxBid: null, bidStep: 10, auctionStart: new Date(), auctionEnd: new Date(Date.now() + 24 * 3600000),
     },
   ];
 

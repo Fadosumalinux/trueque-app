@@ -62,7 +62,7 @@ router.post("/:exchangeId/offer", authMiddleware, async (req: AuthRequest, res) 
 
   for (const uid of [exchange.fromUserId, exchange.toUserId]) {
     await prisma.notification.create({
-      data: { userId: uid, exchangeId: exchange.id, type: "delivery_offer", title: "Un fletero quiere tu entrega", body: `${me.displayName} ofrece entregar (${costCredits} créditos${costBarter ? ` o ${costBarter}` : ""}).` },
+      data: { userId: uid, exchangeId: exchange.id, type: "delivery_offer", title: "Un fletero quiere tu entrega", body: `${me.displayName} ofrece entregar (${costCredits} fieles${costBarter ? ` o ${costBarter}` : ""}).` },
     });
   }
 

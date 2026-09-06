@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware, AuthRequest } from "../middleware/auth.js";
+import { resolveAuction } from "./bids.js";
 
 const router = Router();
 
@@ -29,10 +30,13 @@ router.get("/feed", authMiddleware, async (req: AuthRequest, res) => {
       user: { select: { id: true, displayName: true, username: true, avatarUrl: true, verificationStatus: true, ratingAvg: true, ratingCount: true, role: true, coverageZone: true } },
       category: true,
       zone: { select: { id: true, name: true, multiplier: true } },
+      mode: true,
+      bids: { orderBy: [{ amount: "desc" }, { createdAt: "asc" }], take: 1, include: { bidder: { select: { id: true, displayName: true, verificationStatus: true } } } },
     },
     orderBy: { createdAt: "desc" },
     take: 60,
   });
+  await Promise.all(listings.map((l) => (l.auctionEnd && l.auctionEnd <= new Date() && l.status === "active" ? resolveAuction(l.id) : Promise.resolve(null))));
   res.json(listings);
 });
 

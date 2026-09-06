@@ -54,7 +54,7 @@ router.post("/register", async (req, res) => {
         create: {
           amount: config.welcomeCredits,
           type: "welcome",
-          label: "Créditos de bienvenida (la moneda nace del intercambio)",
+          label: "Fieles de bienvenida. La moneda nace del intercambio.",
         },
       },
     },

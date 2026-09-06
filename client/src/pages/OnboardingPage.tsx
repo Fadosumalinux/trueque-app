@@ -7,7 +7,7 @@ import type { Zone } from "../types";
 const ROLES = [
   { id: "user", emoji: "🧑", desc: "Vecino que trueca artículos y servicios" },
   { id: "professional", emoji: "🩺", desc: "Profesional: médico, plomero, profesor… (zona de cobertura)" },
-  { id: "deliverer", emoji: "📦", desc: "Repartidor: la logística del trueque" },
+  { id: "deliverer", emoji: "📦", desc: "Repartidor: la logística del intercambio" },
 ];
 
 export default function OnboardingPage() {
@@ -70,7 +70,7 @@ export default function OnboardingPage() {
   return (
     <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 24, boxSizing: "border-box", maxWidth: 520, margin: "0 auto" }}>
       <h2 style={{ color: colors.gold, margin: "8px 0" }}>Tu perfil, {user?.displayName}</h2>
-      <div style={{ color: colors.textDim, fontSize: 13, marginBottom: 20 }}>Completá tu perfil para empezar a descubrir trueques.</div>
+      <div style={{ color: colors.textDim, fontSize: 13, marginBottom: 20 }}>Completá tu perfil para empezar a descubrir pactos.</div>
 
       {step === 0 && (
         <>
@@ -134,7 +134,7 @@ export default function OnboardingPage() {
         <>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Validá tu identidad 🔒</div>
           <div style={{ color: colors.textDim, fontSize: 13, marginBottom: 12 }}>
-            La comunidad no tolera estafas. Con tu identidad validada, todos confían más en tus trueques.
+            La comunidad no tolera estafas. Con tu identidad validada, todos confían más en tus pactos.
           </div>
           {verified ? (
             <div style={{ background: "#143a2c", color: colors.green, borderRadius: 12, padding: 14, fontWeight: 700 }}>

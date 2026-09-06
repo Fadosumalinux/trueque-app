@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../utils/api";
 import { colors, input, button, card } from "../utils/theme";
-import type { Listing, Zone, Category } from "../types";
+import type { Listing, Zone, Category, TradeMode } from "../types";
 
 export default function ListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -14,7 +14,7 @@ export default function ListingsPage() {
     <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 16, maxWidth: 520, margin: "0 auto", boxSizing: "border-box" }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold }}>Mis trueques</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold }}>Mis pactos</div>
           <div style={{ fontSize: 12, color: colors.textDim }}>Lo que ofrecés y buscás</div>
         </div>
         <button onClick={() => setShowForm(true)} style={{ background: colors.accent, border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, color: "#171412", cursor: "pointer" }}>
@@ -53,22 +53,42 @@ export default function ListingsPage() {
 function CreateListingForm({ onClose }: { onClose: () => void }) {
   const [zones, setZones] = useState<Zone[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState({ type: "offer", categoryId: "", zoneId: "", title: "", description: "", acceptTerms: "", currency: "both" });
+  const [modes, setModes] = useState<TradeMode[]>([]);
+  const [form, setForm] = useState<any>({ type: "offer", categoryId: "", zoneId: "", title: "", description: "", acceptTerms: "", currency: "both", modeId: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api.catalog.zones().then(setZones);
     api.catalog.categories().then(setCategories);
+    api.modes.list().then(setModes).catch(() => {});
   }, []);
 
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+
+  const selectedMode = modes.find((m) => m.id === form.modeId);
 
   const submit = async () => {
     setError("");
     setBusy(true);
     try {
-      await api.listings.create(form);
+      const body: any = {
+        categoryId: form.categoryId,
+        zoneId: form.zoneId,
+        type: form.type,
+        title: form.title,
+        description: form.description,
+        acceptTerms: form.acceptTerms,
+        currency: form.currency,
+        modeId: form.modeId || undefined,
+        minBid: form.minBid ? Number(form.minBid) : undefined,
+        maxBid: form.maxBid ? Number(form.maxBid) : undefined,
+        bidStep: form.bidStep ? Number(form.bidStep) : undefined,
+        maxParticipants: form.maxParticipants ? Number(form.maxParticipants) : undefined,
+        audienceScope: form.audienceScope || undefined,
+        auctionStart: form.auctionStart ? new Date(form.auctionStart).toISOString() : undefined,
+      };
+      await api.listings.create(body);
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -79,7 +99,7 @@ function CreateListingForm({ onClose }: { onClose: () => void }) {
   return (
     <div style={overlay} onClick={onClose}>
       <div style={{ ...modal, maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ color: colors.gold, margin: "0 0 12px" }}>Publicar un trueque</h3>
+        <h3 style={{ color: colors.gold, margin: "0 0 12px" }}>Publicar un pacto</h3>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           {[["offer", "🛍️ Ofrezco"], ["want", "🙋 Busco"]].map(([v, label]) => (
@@ -113,6 +133,17 @@ function CreateListingForm({ onClose }: { onClose: () => void }) {
           ))}
         </select>
 
+        <label style={{ fontSize: 12, color: colors.textDim, fontWeight: 700, marginTop: 12, display: "block" }}>MODO DE COMERCIO</label>
+        <select style={{ ...input, marginTop: 6 }} value={form.modeId} onChange={(e) => set("modeId", e.target.value)}>
+          <option value="">Trato libre (a definir en la propuesta)</option>
+          {modes.map((m) => (
+            <option key={m.id} value={m.id}>{m.isPreset ? "🅿️ " : "🛠️ "}{m.name} — {m.type}</option>
+          ))}
+        </select>
+        {selectedMode?.description && (
+          <div style={{ fontSize: 12, color: colors.textDim, marginTop: 4 }}>{selectedMode.description}</div>
+        )}
+
         <label style={{ fontSize: 12, color: colors.textDim, fontWeight: 700, marginTop: 12, display: "block" }}>TÍTULO</label>
         <input style={{ ...input, marginTop: 6 }} value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Ej: Mesa de roble con 4 sillas" />
 
@@ -120,12 +151,48 @@ function CreateListingForm({ onClose }: { onClose: () => void }) {
         <textarea style={{ ...input, minHeight: 70, marginTop: 6 }} value={form.description} onChange={(e) => set("description", e.target.value)} />
 
         <label style={{ fontSize: 12, color: colors.textDim, fontWeight: 700, marginTop: 12, display: "block" }}>QUÉ ACEPTÁS A CAMBIO</label>
-        <textarea style={{ ...input, minHeight: 70, marginTop: 6 }} value={form.acceptTerms} onChange={(e) => set("acceptTerms", e.target.value)} placeholder="Ej: caja de herramientas o 180 créditos" />
+        <textarea style={{ ...input, minHeight: 70, marginTop: 6 }} value={form.acceptTerms} onChange={(e) => set("acceptTerms", e.target.value)} placeholder="Ej: caja de herramientas o 180 fieles" />
+
+        {selectedMode?.type === "auction" && (
+          <>
+            <div style={{ ...card, marginTop: 14, borderColor: colors.accentSoft, background: "#1d2a1a" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: colors.gold, marginBottom: 10 }}>⚖️ CONFIGURACIÓN DE LA SUBASTA</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: colors.textDim }}>PUJA MÍNIMA (fieles)</label>
+                  <input style={{ ...input, marginTop: 4 }} type="number" value={form.minBid ?? selectedMode.minBid ?? ""} onChange={(e) => set("minBid", e.target.value)} placeholder={String(selectedMode.minBid ?? "")} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: colors.textDim }}>PUJA MÁXIMA (fieles)</label>
+                  <input style={{ ...input, marginTop: 4 }} type="number" value={form.maxBid ?? ""} onChange={(e) => set("maxBid", e.target.value)} placeholder="sin techo" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: colors.textDim }}>PASO MÍNIMO (fieles)</label>
+                  <input style={{ ...input, marginTop: 4 }} type="number" value={form.bidStep ?? selectedMode.bidStep ?? ""} onChange={(e) => set("bidStep", e.target.value)} placeholder={String(selectedMode.bidStep ?? 10)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: colors.textDim }}>CUPO DE PARTICIPANTES</label>
+                  <input style={{ ...input, marginTop: 4 }} type="number" value={form.maxParticipants ?? ""} onChange={(e) => set("maxParticipants", e.target.value)} placeholder="sin cupo" />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: colors.textDim }}>ARRANQUE</label>
+                  <input style={{ ...input, marginTop: 4 }} type="datetime-local" value={form.auctionStart ?? ""} onChange={(e) => set("auctionStart", e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: colors.textDim }}>DURACIÓN SUGERIDA</label>
+                  <input style={{ ...input, marginTop: 4 }} type="number" value={form.durationHours ?? selectedMode.durationHours ?? ""} onChange={(e) => set("durationHours", e.target.value)} placeholder={String(selectedMode.durationHours ?? 24)} />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
 
         <div style={{ marginTop: 12 }}>
           <label style={{ fontSize: 12, color: colors.textDim, fontWeight: 700 }}>FORMAS DE PAGO</label>
           <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-            {[["barter", "🔄 Solo trueque"], ["both", "🔀 Ambos"], ["credits", "🪙 Solo créditos"]].map(([v, label]) => (
+            {[["barter", "🔄 Solo trueque"], ["both", "🔀 Ambos"], ["credits", "🪙 Solo fieles"]].map(([v, label]) => (
               <button
                 key={v}
                 onClick={() => set("currency", v)}

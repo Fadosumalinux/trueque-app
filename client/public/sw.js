@@ -1,4 +1,4 @@
-const CACHE = "trueque-v1";
+const CACHE = "pacto-v1";
 self.addEventListener("install", (e: any) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/index.html", "/icon.svg", "/manifest.webmanifest"])));
 });

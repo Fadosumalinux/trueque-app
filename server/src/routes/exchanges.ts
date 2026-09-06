@@ -11,7 +11,7 @@ export function platformFee(estimatedValue: number): number {
   return Math.round(estimatedValue * config.platformFeeRate);
 }
 
-// Determinamos quién paga créditos según el tipo de listado.
+// Determinamos quién paga fieles según el tipo de listado.
 function parties(listingType: string, fromUserId: string, toUserId: string) {
   // "offer": el dueño ofrece → el interesado (from) paga al dueño (to).
   // "want":  el dueño busca → el que responde (from) entrega y el dueño (to) paga.
@@ -33,7 +33,7 @@ export async function settleExchange(tx: Prisma.TransactionClient, exchange: any
   const sellerId = exchange.listing.type === "offer" ? exchange.toUserId : exchange.fromUserId;
   const buyerId = exchange.listing.type === "offer" ? exchange.fromUserId : exchange.toUserId;
 
-  // 1) La moneda nace del trueque: cada parte recibe el valor zonal en créditos generados.
+  // 1) La moneda nace del intercambio: cada parte recibe el valor zonal en fieles generados.
   const generated: { userId: string; label: string }[] = [
     { userId: sellerId, label: "Vendedor" },
     { userId: buyerId, label: "Comprador" },
@@ -44,7 +44,7 @@ export async function settleExchange(tx: Prisma.TransactionClient, exchange: any
   for (const g of generated) {
     await tx.user.update({ where: { id: g.userId }, data: { credits: { increment: V } } });
     await tx.creditLedger.create({
-      data: { userId: g.userId, exchangeId: exchange.id, amount: V, type: "generated_barter", label: `Créditos generados por trueque (${g.label})` },
+      data: { userId: g.userId, exchangeId: exchange.id, amount: V, type: "generated_barter", label: `Fieles generados por este pacto (${g.label})` },
     });
   }
 
@@ -71,15 +71,15 @@ export async function settleExchange(tx: Prisma.TransactionClient, exchange: any
     data: { userId: config.platformUserId, exchangeId: exchange.id, amount: chargedTotal, type: "commission", label: `Comisión "el café" recibida por la plataforma` },
   });
 
-  // 3) Pago en créditos (modo credits/mixed): transferencia entre partes.
+  // 3) Pago en fieles (modo credits/mixed): transferencia entre partes.
   if (exchange.creditsAmount > 0) {
     await tx.user.update({ where: { id: payerId }, data: { credits: { decrement: exchange.creditsAmount } } });
     await tx.user.update({ where: { id: receiverId }, data: { credits: { increment: exchange.creditsAmount } } });
     await tx.creditLedger.create({
-      data: { userId: payerId, exchangeId: exchange.id, amount: -exchange.creditsAmount, type: "payment", label: "Pago en créditos del trueque" },
+      data: { userId: payerId, exchangeId: exchange.id, amount: -exchange.creditsAmount, type: "payment", label: "Pago en fieles del pacto" },
     });
     await tx.creditLedger.create({
-      data: { userId: receiverId, exchangeId: exchange.id, amount: exchange.creditsAmount, type: "payment", label: "Recibido en créditos del trueque" },
+      data: { userId: receiverId, exchangeId: exchange.id, amount: exchange.creditsAmount, type: "payment", label: "Recibido en fieles del pacto" },
     });
   }
 
@@ -144,7 +144,7 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
       userId: listing.userId,
       exchangeId: exchange.id,
       type: "exchange_offer",
-      title: "Nueva propuesta de trueque",
+      title: "Nueva propuesta de pacto",
       body: `${req.userId} quiere intercambiar: ${listing.title}`,
     },
   });
@@ -171,7 +171,7 @@ router.post("/:id/accept", authMiddleware, async (req: AuthRequest, res) => {
   res.json(updated);
 });
 
-// Completar el intercambio → liquidación de créditos + comisión repartida
+// Completar el intercambio → liquidación de fieles + comisión repartida
 router.post("/:id/complete", authMiddleware, async (req: AuthRequest, res) => {
   const exchange = await prisma.exchange.findUnique({
     where: { id: req.params.id as string },
@@ -190,12 +190,12 @@ router.post("/:id/complete", authMiddleware, async (req: AuthRequest, res) => {
     return;
   }
 
-  // Validar créditos suficientes para el pago si corresponde
+  // Validar fieles suficientes para el pago si corresponde
   if (exchange.creditsAmount > 0) {
     const { payerId } = parties(exchange.listing.type, exchange.fromUserId, exchange.toUserId);
     const payer = await prisma.user.findUnique({ where: { id: payerId } });
     if (!payer || payer.credits < exchange.creditsAmount + platformFee(exchange.estimatedValue)) {
-      res.status(400).json({ error: "El comprador no tiene créditos suficientes para el pago y la comisión" });
+      res.status(400).json({ error: "El comprador no tiene fieles suficientes para el pago y la comisión" });
       return;
     }
   }
@@ -206,7 +206,7 @@ router.post("/:id/complete", authMiddleware, async (req: AuthRequest, res) => {
     return updated;
   });
 
-  res.json({ ok: true, message: "Trueque completado. La moneda nace del intercambio.", exchange: result });
+  res.json({ ok: true, message: "Pacto completado. La moneda nace del intercambio.", exchange: result });
 });
 
 // Cancelar

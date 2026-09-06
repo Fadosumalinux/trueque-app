@@ -3,7 +3,7 @@ import type { Tab } from "../pages/MainApp";
 
 const ITEMS: { id: Tab; label: string; icon: string }[] = [
   { id: "discover", label: "Descubrir", icon: "🃏" },
-  { id: "listings", label: "Mis trueques", icon: "📦" },
+  { id: "listings", label: "Mis pactos", icon: "🤝" },
   { id: "exchanges", label: "Acuerdos", icon: "🤝" },
   { id: "wallet", label: "Monedero", icon: "🪙" },
   { id: "profile", label: "Perfil", icon: "👤" },

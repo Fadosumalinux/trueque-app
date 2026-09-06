@@ -19,12 +19,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("trueque_token");
+    const token = localStorage.getItem("pacto_token");
     if (!token) {
       setLoading(false);
       return;
     }
-    api.auth.me().then(setUser).catch(() => localStorage.removeItem("trueque_token")).finally(() => setLoading(false));
+    api.auth.me().then(setUser).catch(() => localStorage.removeItem("pacto_token")).finally(() => setLoading(false));
   }, []);
 
   const refreshUser = async () => {
@@ -34,20 +34,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const res = await api.auth.login({ email, password });
-    localStorage.setItem("trueque_token", res.token);
+    localStorage.setItem("pacto_token", res.token);
     setUser(res.user);
     return res.user;
   };
 
   const register = async (data: any) => {
     const res = await api.auth.register(data);
-    localStorage.setItem("trueque_token", res.token);
+    localStorage.setItem("pacto_token", res.token);
     setUser(res.user);
     return res.user;
   };
 
   const logout = () => {
-    localStorage.removeItem("trueque_token");
+    localStorage.removeItem("pacto_token");
     setUser(null);
   };
 

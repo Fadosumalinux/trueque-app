@@ -93,7 +93,7 @@ export default function DiscoverPage() {
         ) : (
           <div style={{ ...swipeCardStyle, position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
             <span style={{ fontSize: 44 }}>🌾</span>
-            <div style={{ color: colors.textDim, fontSize: 14 }}>No hay más trueques por ahora.</div>
+            <div style={{ color: colors.textDim, fontSize: 14 }}>No hay más pactos por ahora.</div>
             <button onClick={load} style={{ background: colors.accent, border: "none", borderRadius: 999, padding: "10px 18px", fontWeight: 700, color: "#171412", cursor: "pointer" }}>
               Ver más
             </button>
@@ -118,10 +118,16 @@ export default function DiscoverPage() {
 }
 
 function EmojiCard({ listing }: { listing: Listing }) {
+  const isAuction = listing.mode?.type === "auction" || !!listing.auctionEnd;
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 72, background: colors.surface2, borderRadius: 14 }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 72, background: colors.surface2, borderRadius: 14, position: "relative" }}>
         {listing.category.emoji}
+        {isAuction && (
+          <div style={{ position: "absolute", top: 10, left: 10, background: colors.gold, color: "#171412", fontWeight: 800, fontSize: 11, borderRadius: 999, padding: "4px 10px" }}>
+            ⚖️ SUBASTA
+          </div>
+        )}
       </div>
       <div style={{ padding: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -130,6 +136,7 @@ function EmojiCard({ listing }: { listing: Listing }) {
         </div>
         <div style={{ color: colors.textDim, fontSize: 13 }}>
           {listing.category.emoji} {listing.category.name} · {listing.zone.name} · {listing.type === "want" ? "🙋 busca" : "🛍️ ofrece"}
+          {isAuction && listing.bids?.[0] && <span style={{ color: colors.gold, fontWeight: 700 }}> · {listing.bids[0].amount} 🪙 top</span>}
         </div>
         <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontSize: 13, color: colors.textDim }}>

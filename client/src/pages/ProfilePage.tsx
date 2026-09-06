@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../utils/api";
 import { colors, card, button, input, verifiedBadge, roleColor, roleLabel } from "../utils/theme";
+import ModesPage from "./ModesPage";
 
 export default function ProfilePage() {
   const { user, logout, setUser } = useAuth();
@@ -10,6 +11,9 @@ export default function ProfilePage() {
   const [dni, setDni] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showModes, setShowModes] = useState(false);
+
+  if (showModes) return <ModesPage onBack={() => setShowModes(false)} />;
 
   useEffect(() => {
     if (user) {
@@ -54,7 +58,7 @@ export default function ProfilePage() {
               <span style={{ background: "#3a2c22", color: colors.accentSoft, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>⏳ identidad sin validar</span>
             )}
             <span style={{ background: colors.surface2, borderRadius: 999, padding: "2px 8px", fontSize: 11, color: colors.gold }}>★ {user?.ratingAvg.toFixed(1)} ({user?.ratingCount})</span>
-            <span style={{ background: colors.surface2, borderRadius: 999, padding: "2px 8px", fontSize: 11, color: colors.textDim }}>🤝 {user?.totalExchanges} trueques</span>
+            <span style={{ background: colors.surface2, borderRadius: 999, padding: "2px 8px", fontSize: 11, color: colors.textDim }}>🤝 {user?.totalExchanges} pactos</span>
           </div>
         </div>
       </div>
@@ -114,7 +118,11 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <button style={{ ...button("danger"), marginTop: 20 }} onClick={logout}>Salir de la app</button>
+      <button style={{ ...button(), marginTop: 16 }} onClick={() => setShowModes(true)}>
+        🛠️ Modos de comercio
+      </button>
+
+      <button style={{ ...button("danger"), marginTop: 12 }} onClick={logout}>Salir de la app</button>
     </div>
   );
 }

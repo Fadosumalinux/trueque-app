@@ -26,10 +26,50 @@ model Category {
   name       String      @unique
   emoji      String
   type       String      // "article" | "service"
-  baseValue  Float       @default(50) // valor de referencia en créditos
+  baseValue  Float       @default(50) // valor de referencia en fieles
   slug       String      @unique
   listings   Listing[]
   createdAt  DateTime    @default(now())
+}
+
+// ─── Modos de comercio (reglas del trato, configurables) ───
+model TradeMode {
+  id             String    @id @default(uuid())
+  name           String
+  description    String?
+  type           String    @default("barter") // "barter" | "sale" | "auction" | "custom"
+  isPreset       Boolean   @default(false) // plantilla de la app (editable solo por su creador)
+  createdById    String?
+  createdBy      User?     @relation("TradeModeCreator", fields: [createdById], references: [id])
+  audienceScope  String    @default("public") // "public" | "verified" | "zone" | "invite"
+  allowBarter    Boolean   @default(true)
+  allowFieles    Boolean   @default(true)
+  minBid         Float?    // piso en fieles por ronda (subastas/ventas)
+  maxBid         Float?    // techo en fieles por ronda (subastas/ventas)
+  bidStep        Float?    // incremento mínimo de puja
+  durationHours  Int?      // duración sugerida de la puja
+  maxParticipants Int?     // tope de público concurrente
+  isActive       Boolean   @default(true)
+  listings       Listing[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// ─── Pujas de subasta ───
+model Bid {
+  id         String   @id @default(uuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  bidderId   String
+  bidder     User     @relation("UserBids", fields: [bidderId], references: [id])
+  amount     Float       // puja en fieles
+  article    String? // oferta alternativa: puja con artículo en trueque
+  note       String?
+  status     String   @default("active") // "active" | "outbid" | "won" | "lost"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([listingId, bidderId])
 }
 
 // ─── Usuarios (vecino, profesional, repartidor) ───
@@ -67,6 +107,8 @@ model User {
   deliveries      Delivery[]  @relation("UserDelivery")
   deliveredExchanges Exchange[] @relation("ExchangeDeliverer")
   notifications   Notification[]
+  createdModes    TradeMode[]  @relation("TradeModeCreator")
+  bids            Bid[]        @relation("UserBids")
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 }
@@ -80,14 +122,27 @@ model Listing {
   category    Category    @relation(fields: [categoryId], references: [id])
   zoneId      String
   zone        Zone        @relation(fields: [zoneId], references: [id])
+  modeId      String?
+  mode        TradeMode?  @relation(fields: [modeId], references: [id])
   type        String      @default("offer") // "offer" | "want"
   title       String
   description String
-  acceptTerms String      // qué acepta a cambio (trueque de X, o Y créditos)
+  acceptTerms String      // qué acepta a cambio (trueque de X, o Y fieles)
   estimatedValue Float     // valor zonal calculado = category.baseValue * zone.multiplier
   currency    String      @default("credits") // "credits" | "barter" | "both"
+  // reglas efectivas del trato (copia de su modo en el momento de publicar)
+  audienceScope   String?  // "public" | "verified" | "zone" | "invite"
+  allowBarter     Boolean  @default(true)
+  allowFieles     Boolean  @default(true)
+  minBid          Float?   // piso de puja/venta en fieles
+  maxBid          Float?   // techo de puja en fieles
+  bidStep         Float?   // incremento mínimo de puja
+  auctionStart    DateTime? // inicio de la puja (null = ya abierta)
+  auctionEnd      DateTime? // fin de la puja
+  maxParticipants Int?      // tope de público concurrente
+  bids            Bid[]
   photos      String?     // JSON array de URLs
-  status      String      @default("active") // active | traded | paused | hidden
+  status      String      @default("active") // active | auction_closed | traded | paused | hidden
   likes       ListingLike[]
   exchanges   Exchange[]
   createdAt   DateTime    @default(now())
@@ -107,7 +162,7 @@ model ListingLike {
   @@unique([userId, listingId])
 }
 
-// ─── Intercambios / trueques ───
+// ─── Intercambios / pactos ───
 model Exchange {
   id            String    @id @default(uuid())
   listingId     String

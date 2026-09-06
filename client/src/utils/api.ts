@@ -1,7 +1,7 @@
 const API = "/api";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem("trueque_token");
+  const token = localStorage.getItem("pacto_token");
   const res = await fetch(API + path, {
     ...options,
     headers: {
@@ -75,5 +75,16 @@ export const api = {
   notifications: {
     list: () => request<any[]>("/notifications"),
     readAll: () => request<any>("/notifications/read-all", { method: "POST" }),
+  },
+  modes: {
+    list: () => request<any[]>("/modes"),
+    create: (body: any) => request<any>("/modes", { method: "POST", body: JSON.stringify(body) }),
+    update: (id: string, body: any) => request<any>(`/modes/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+    remove: (id: string) => request<any>(`/modes/${id}`, { method: "DELETE" }),
+  },
+  bids: {
+    list: (listingId: string) => request<any[]>(`/bids/listings/${listingId}/bids`),
+    place: (listingId: string, body: any) => request<any>(`/bids/listings/${listingId}/bids`, { method: "POST", body: JSON.stringify(body) }),
+    close: (listingId: string) => request<any>(`/bids/listings/${listingId}/bids/close`, { method: "POST" }),
   },
 };

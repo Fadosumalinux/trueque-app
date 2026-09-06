@@ -23,12 +23,12 @@ export default function ExchangesPage() {
     <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 16, maxWidth: 520, margin: "0 auto", boxSizing: "border-box" }}>
       <header style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold }}>Acuerdos</div>
-        <div style={{ fontSize: 12, color: colors.textDim }}>Tus trueques en curso y sus estados</div>
+        <div style={{ fontSize: 12, color: colors.textDim }}>Tus pactos en curso y sus estados</div>
       </header>
 
       {exchanges.length === 0 && (
         <div style={{ ...card, textAlign: "center", color: colors.textDim }}>
-          Todavía no tenés acuerdos. ¡Deslizá en Descubrir y proponé tu primer trueque!
+          Todavía no tenés acuerdos. ¡Deslizá en Descubrir y proponé tu primer pacto!
         </div>
       )}
 
@@ -135,7 +135,7 @@ function ExchangeDetail({ exchange, onClose }: { exchange: Exchange; onClose: ()
           <>
             {isDeliverer && !exchange.deliverer && (
               <div style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 12, color: colors.textDim, fontWeight: 700 }}>COSTO DE ENTREGA (créditos)</label>
+                <label style={{ fontSize: 12, color: colors.textDim, fontWeight: 700 }}>COSTO DE ENTREGA (fieles)</label>
                 <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                   <input style={{ ...input, flex: 1 }} type="number" min={0} value={cost} onChange={(e) => setCost(Number(e.target.value))} />
                   <button style={{ ...button(), width: "auto" }} onClick={() => act(() => api.deliveries.offer(exchange.id, { costCredits: cost, pickupNote: "Entrega coordinada por la app" }))} disabled={busy}>
@@ -145,7 +145,7 @@ function ExchangeDetail({ exchange, onClose }: { exchange: Exchange; onClose: ()
               </div>
             )}
             <button style={button()} onClick={() => act(() => api.exchanges.complete(exchange.id))} disabled={busy}>
-              ✓ Marcar trueque completado
+              ✓ Marcar pacto completado
             </button>
           </>
         )}

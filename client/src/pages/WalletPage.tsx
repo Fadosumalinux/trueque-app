@@ -27,10 +27,10 @@ export default function WalletPage() {
       <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold, marginBottom: 12 }}>Monedero</div>
 
       <div style={{ ...card, background: "linear-gradient(135deg,#2a241f,#1d2a1a)", textAlign: "center", padding: 28 }}>
-        <div style={{ fontSize: 13, color: colors.textDim }}>SALDO EN MONEDA PROPIA</div>
+        <div style={{ fontSize: 13, color: colors.textDim }}>SALDO EN FIELES</div>
         <div style={{ fontSize: 46, fontWeight: 900, color: colors.gold }}>{user?.credits.toFixed(0)} <span style={{ fontSize: 24 }}>🪙</span></div>
         <div style={{ fontSize: 11, color: colors.textDim, marginTop: 8 }}>
-          Los créditos nacen del trueque: no se compran con dinero de bancos.
+          Los fieles nacen del intercambio. No se compran con dinero de bancos.
         </div>
       </div>
 

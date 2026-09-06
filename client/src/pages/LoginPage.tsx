@@ -30,12 +30,12 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, display: "flex", flexDirection: "column", padding: 28, boxSizing: "border-box" }}>
       <div style={{ marginTop: 48, textAlign: "center" }}>
-        <div style={{ fontSize: 56 }}>🔄</div>
+        <div style={{ fontSize: 56 }}>🤝</div>
         <h1 style={{ margin: "8px 0 4px", color: colors.gold, fontSize: 28 }}>
-          La moneda que nace del intercambio
+          Pacto — tu valor es fiel
         </h1>
         <p style={{ color: colors.textDim, fontSize: 14, margin: 0 }}>
-          Trueque de artículos y servicios. Sin el dinero que reparten los bancos.
+          Intercambiá artículos y servicios por fieles: la moneda que nace del intercambio. Sin el dinero que reparten los bancos.
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default function LoginPage() {
         {error && <div style={{ color: colors.red, fontSize: 13 }}>{error}</div>}
 
         <button style={button()} onClick={submit} disabled={busy}>
-          {busy ? "Un momento…" : mode === "login" ? "Entrar" : "Crear mi cuenta (+50 créditos)"}
+          {busy ? "Un momento…" : mode === "login" ? "Entrar" : "Crear mi cuenta (+50 fieles)"}
         </button>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 8 }}>
