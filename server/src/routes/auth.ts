@@ -74,6 +74,25 @@ router.post("/login", async (req, res) => {
   res.json({ token, user: await prisma.user.findUnique({ where: { id: user.id }, select: publicUserSelect }) });
 });
 
+// Acceso demo en un clic: entra a una cuenta de muestra sin email ni contraseña.
+// Ideal para que cualquiera pueda probar la app sin crear nada.
+router.post("/demo", async (req, res) => {
+  const demoIds: Record<string, string> = {
+    marta: "user-marta",
+    ramiro: "user-ramiro",
+    tito: "user-tito",
+    cacho: "user-cacho",
+  };
+  const id = demoIds[(req.body?.as as string) || "marta"];
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) {
+    res.status(404).json({ error: "Cuenta demo no disponible. Corré la base de datos demo (seed)." });
+    return;
+  }
+  const token = jwt.sign({ userId: user.id }, config.jwtSecret, { expiresIn: "7d" });
+  res.json({ token, user: await prisma.user.findUnique({ where: { id: user.id }, select: publicUserSelect }) });
+});
+
 router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.userId }, select: publicUserSelect });
   if (!user) {

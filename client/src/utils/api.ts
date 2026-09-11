@@ -21,6 +21,7 @@ export const api = {
   auth: {
     register: (body: any) => request<any>("/auth/register", { method: "POST", body: JSON.stringify(body) }),
     login: (body: any) => request<any>("/auth/login", { method: "POST", body: JSON.stringify(body) }),
+    demo: (as?: string) => request<any>("/auth/demo", { method: "POST", body: JSON.stringify(as ? { as } : {}) }),
     me: () => request<any>("/auth/me"),
   },
   catalog: {

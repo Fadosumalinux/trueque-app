@@ -6,6 +6,7 @@ interface AuthCtx {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  demo: (as?: string) => Promise<User>;
   register: (data: { email: string; username: string; password: string; displayName: string; zoneId?: string; role?: string }) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -39,6 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.user;
   };
 
+  const demo = async (as?: string) => {
+    const res = await api.auth.demo(as);
+    localStorage.setItem("pacto_token", res.token);
+    setUser(res.user);
+    return res.user;
+  };
+
   const register = async (data: any) => {
     const res = await api.auth.register(data);
     localStorage.setItem("pacto_token", res.token);
@@ -51,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  return <Ctx.Provider value={{ user, loading, login, register, logout, refreshUser, setUser }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, loading, login, demo, register, logout, refreshUser, setUser }}>{children}</Ctx.Provider>;
 }
 
 export const useAuth = () => useContext(Ctx);
