@@ -10,3 +10,5 @@ dist/
 *.db-journal
 
 .DS_Store
+
+.vercel/

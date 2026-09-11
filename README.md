@@ -94,6 +94,41 @@ npm install
 npm run dev
 ```
 
+## Deploy en Vercel (producción)
+
+La app corre en **Vercel** como una función serverless (API Express) + estático (cliente compilado), y usa **Postgres** en la nube. Localmente el desarrollo sigue usando SQLite (schema `prisma/schema.prisma`); en producción se usa el schema Postgres (`prisma/schema.postgres.prisma`).
+
+1. **Creá la base de datos**: en el dashboard de Vercel → **Storage → Create → Postgres**. Copiá la *connection string* (la no-pooling, `?sslmode=require`).
+2. **Login y link** en la carpeta del proyecto:
+
+   ```bash
+   npm i -g vercel
+   vercel login        # elegí "Email" (magic link, sin GitHub)
+   vercel link         # asocia esta carpeta a un proyecto de Vercel
+   ```
+
+3. **Variables de entorno** (proyecto → Settings → Environment Variables, y para el build):
+
+   ```bash
+   vercel env add DATABASE_URL production
+   vercel env add DIRECT_DATABASE_URL production
+   vercel env add JWT_SECRET production
+   ```
+
+   En las tres subí la connection string de Postgres (y un secreto cualquiera para JWT). O cargalas por dashboard y luego: *Settings → Environment Variables → "Scope" a Production + Preview + Development*.
+
+4. **Deploy**:
+
+   ```bash
+   vercel --prod
+   ```
+
+   El primer build crea las tablas (`prisma db push`) y siembra los datos demo (`prisma db seed`). Vas a quedarte con un link tipo `https://<tu-app>.vercel.app`.
+
+- Cada `git push` NO redepliega solo: para producción se usa `vercel --prod` (o conectás el repo GitHub en el dashboard → Deployments).
+- La DB Postgres la creás una sola vez; los datos sobreviven a los redeploys (el seed solo corre si la base está vacía en el boot script; en el build de Vercel se siembra idempotente).
+- Alternativa a Vercel Storage: **Neon** (postgresql.com, signup por email, plan free). Misma idea: copiá la connection string a `DATABASE_URL` y `DIRECT_DATABASE_URL`.
+
 ## Roadmap
 
 - [x] Trueque, servicios y entrega con fleteros

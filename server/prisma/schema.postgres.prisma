@@ -1,0 +1,254 @@
+// Schema para producción (Postgres, p.ej. Vercel Storage / Neon).
+// Es una copia 1:1 de schema.prisma (que sigue siendo el de desarrollo local en
+// SQLite). Para deploy se genera el cliente y se aplica este schema:
+//   npx prisma generate --schema prisma/schema.postgres.prisma
+//   npx prisma db push    --schema prisma/schema.postgres.prisma
+generator client {
+  provider     = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ─── Catálogo geográfico y de valor zonal ───
+model Zone {
+  id           String    @id @default(uuid())
+  name         String    @unique
+  region       String
+  latitude     Float
+  longitude    Float
+  multiplier   Float     @default(1.0) // índice de valor zonal (estudio de mercado)
+  description  String?
+  listings     Listing[]
+  users        User[]
+  createdAt    DateTime  @default(now())
+}
+
+model Category {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  emoji      String
+  type       String      // "article" | "service"
+  baseValue  Float       @default(50) // valor de referencia en fieles
+  slug       String      @unique
+  listings   Listing[]
+  createdAt  DateTime    @default(now())
+}
+
+// ─── Modos de comercio (reglas del trato, configurables) ───
+model TradeMode {
+  id             String    @id @default(uuid())
+  name           String
+  description    String?
+  type           String    @default("barter") // "barter" | "sale" | "auction" | "custom"
+  isPreset       Boolean   @default(false) // plantilla de la app (editable solo por su creador)
+  createdById    String?
+  createdBy      User?     @relation("TradeModeCreator", fields: [createdById], references: [id])
+  audienceScope  String    @default("public") // "public" | "verified" | "zone" | "invite"
+  allowBarter    Boolean   @default(true)
+  allowFieles    Boolean   @default(true)
+  minBid         Float?    // piso en fieles por ronda (subastas/ventas)
+  maxBid         Float?    // techo en fieles por ronda (subastas/ventas)
+  bidStep        Float?    // incremento mínimo de puja
+  durationHours  Int?      // duración sugerida de la puja
+  maxParticipants Int?     // tope de público concurrente
+  isActive       Boolean   @default(true)
+  listings       Listing[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// ─── Pujas de subasta ───
+model Bid {
+  id         String   @id @default(uuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  bidderId   String
+  bidder     User     @relation("UserBids", fields: [bidderId], references: [id])
+  amount     Float       // puja en fieles
+  article    String? // oferta alternativa: puja con artículo en trueque
+  note       String?
+  status     String   @default("active") // "active" | "outbid" | "won" | "lost"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([listingId, bidderId])
+}
+
+// ─── Usuarios (vecino, profesional, repartidor) ───
+model User {
+  id              String      @id @default(uuid())
+  email           String      @unique
+  username        String      @unique
+  password        String
+  displayName     String
+  role            String      @default("user") // "user" | "professional" | "deliverer"
+  bio             String?
+  avatarUrl       String?
+  verificationStatus String   @default("pending") // "pending" | "verified"
+  biometricVerified Boolean   @default(false)
+  dniVerified     Boolean     @default(false)
+  zoneId          String?
+  zone            Zone?       @relation(fields: [zoneId], references: [id])
+  coverageZone    String?     // profesionales/repartidores: área de servicio
+  maxTravelKm     Float?      // hasta dónde puede viajar para el intercambio
+  latitude        Float?
+  longitude       Float?
+  credits         Float       @default(0) // saldo de la moneda propia
+  ratingAvg       Float       @default(0)
+  ratingCount     Int         @default(0)
+  totalExchanges  Int         @default(0)
+  likesCount      Int         @default(0)
+  verifiedAt      DateTime?
+  listings        Listing[]
+  sentExchanges   Exchange[]  @relation("ExchangeFrom")
+  receivedExchanges Exchange[] @relation("ExchangeTo")
+  sentLikes       ListingLike[] @relation("LikeFrom")
+  ledger          CreditLedger[]
+  reviewsGiven    Review[]    @relation("ReviewFrom")
+  reviewsReceived Review[]    @relation("ReviewTo")
+  deliveries      Delivery[]  @relation("UserDelivery")
+  deliveredExchanges Exchange[] @relation("ExchangeDeliverer")
+  notifications   Notification[]
+  createdModes    TradeMode[]  @relation("TradeModeCreator")
+  bids            Bid[]        @relation("UserBids")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+// ─── Listados (qué ofrezco / qué busco) ───
+model Listing {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  zoneId      String
+  zone        Zone        @relation(fields: [zoneId], references: [id])
+  modeId      String?
+  mode        TradeMode?  @relation(fields: [modeId], references: [id])
+  type        String      @default("offer") // "offer" | "want"
+  title       String
+  description String
+  acceptTerms String      // qué acepta a cambio (trueque de X, o Y fieles)
+  estimatedValue Float     // valor zonal calculado = category.baseValue * zone.multiplier
+  currency    String      @default("credits") // "credits" | "barter" | "both"
+  // reglas efectivas del trato (copia de su modo en el momento de publicar)
+  audienceScope   String?  // "public" | "verified" | "zone" | "invite"
+  allowBarter     Boolean  @default(true)
+  allowFieles     Boolean  @default(true)
+  minBid          Float?   // piso de puja/venta en fieles
+  maxBid          Float?   // techo de puja en fieles
+  bidStep         Float?   // incremento mínimo de puja
+  auctionStart    DateTime? // inicio de la puja (null = ya abierta)
+  auctionEnd      DateTime? // fin de la puja
+  maxParticipants Int?      // tope de público concurrente
+  bids            Bid[]
+  photos      String?     // JSON array de URLs
+  status      String      @default("active") // active | auction_closed | traded | paused | hidden
+  likes       ListingLike[]
+  exchanges   Exchange[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// ─── Gamificación: likes estilo app de citas ───
+model ListingLike {
+  id        String   @id @default(uuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  userId    String
+  user      User     @relation("LikeFrom", fields: [userId], references: [id])
+  direction String   // "like" | "pass"
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+// ─── Intercambios / pactos ───
+model Exchange {
+  id            String    @id @default(uuid())
+  listingId     String
+  listing       Listing   @relation(fields: [listingId], references: [id])
+  fromUserId    String
+  fromUser      User      @relation("ExchangeFrom", fields: [fromUserId], references: [id])
+  toUserId      String
+  toUser        User      @relation("ExchangeTo", fields: [toUserId], references: [id])
+  mode          String    // "barter" | "credits" | "mixed"
+  offerTerms    String    // qué ofrece el que inicia
+  estimatedValue Float     // valor zonal de referencia (seguro de transacción)
+  creditsAmount Float     @default(0)
+  platformFee   Float     @default(0) // "el valor de un café"
+  feeSplit      String?   // JSON: reparto entre vendedor/comprador/plataforma/fletero
+  status        String    @default("pending") // pending | accepted | completed | cancelled
+  delivererId   String?
+  deliverer     User?     @relation("ExchangeDeliverer", fields: [delivererId], references: [id])
+  deliveryCost  Float     @default(0)
+  deliveryMode  String?   // "credits" | "barter"
+  delivery      Delivery?
+  reviews       Review[]
+  notifications Notification[]
+  ledger        CreditLedger[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Libro mayor de la moneda propia ───
+model CreditLedger {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  exchangeId String?
+  exchange   Exchange? @relation(fields: [exchangeId], references: [id])
+  amount     Float // + generado / − gastado / − comisión
+  type       String // "generated_barter" | "payment" | "commission" | "refund" | "delivery_fee" | "fee_split"
+  label      String
+  createdAt  DateTime  @default(now())
+}
+
+// ─── Reseñas (confianza, nadie estafado) ───
+model Review {
+  id          String   @id @default(uuid())
+  exchangeId  String
+  exchange    Exchange @relation(fields: [exchangeId], references: [id])
+  reviewerId  String
+  reviewer    User     @relation("ReviewFrom", fields: [reviewerId], references: [id])
+  revieweeId  String
+  reviewee    User     @relation("ReviewTo", fields: [revieweeId], references: [id])
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+}
+
+// ─── Entregas opcionales con repartidores ───
+model Delivery {
+  id           String   @id @default(uuid())
+  exchangeId   String   @unique
+  exchange     Exchange @relation(fields: [exchangeId], references: [id])
+  delivererId  String
+  deliverer    User     @relation("UserDelivery", fields: [delivererId], references: [id])
+  status       String   @default("offered") // offered | accepted | in_transit | delivered | cancelled
+  costCredits  Float    @default(0)
+  costBarter   String?
+  pickupNote   String?
+  deliveredAt  DateTime?
+  createdAt    DateTime @default(now())
+}
+
+// ─── Notificaciones ───
+model Notification {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  exchangeId String?
+  exchange   Exchange? @relation(fields: [exchangeId], references: [id])
+  type       String
+  title      String
+  body       String
+  read       Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+}
