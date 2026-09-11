@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { config } from "./config/constants.js";
 import authRoutes from "./routes/auth.js";
 import catalogRoutes from "./routes/catalog.js";
@@ -13,6 +15,11 @@ import walletRoutes from "./routes/wallet.js";
 import notificationRoutes from "./routes/notifications.js";
 import modeRoutes from "./routes/modes.js";
 import bidRoutes from "./routes/bids.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// En producción el cliente ya compilado vive en <repo>/client/dist
+// y Express lo sirve junto a la API en un solo origen.
+const clientDist = path.resolve(__dirname, "../../client/dist");
 
 const app = express();
 app.use(cors());
@@ -34,6 +41,10 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/modes", modeRoutes);
 app.use("/api/bids", bidRoutes);
+
+// Cliente compilado (PWA) en el mismo origen.
+app.use(express.static(clientDist));
+app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(clientDist, "index.html")));
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

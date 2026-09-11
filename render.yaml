@@ -1,0 +1,23 @@
+# Deploy automático de Pacto en Render (plan free).
+# Tras conectar el repo en render.com, esta app se despliega sola y te da un link tipo:
+#   https://pacto-app.onrender.com
+#
+# Cómo: dashboard.render.com → New → Blueprint → conectar github.com/Fadosumalinux/trueque-app
+services:
+  - type: web
+    name: pacto-app
+    runtime: node
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    buildCommand: |
+      cd client && npm ci && npm run build
+      cd ../server && npm ci && npm run build
+    startCommand: cd server && PORT=$PORT node scripts/boot.mjs
+    envVars:
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
