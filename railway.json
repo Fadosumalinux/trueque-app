@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "cd client && npm install && npm run build && cd ../server && npm install"
+  },
+  "deploy": {
+    "startCommand": "cd server && DATABASE_URL=\"file:./dev.db\" npx prisma generate && DATABASE_URL=\"file:./dev.db\" npx prisma db push && DATABASE_URL=\"file:./dev.db\" npx prisma db seed && DATABASE_URL=\"file:./dev.db\" npx tsx src/index.ts",
+    "healthcheckPath": "/api/health"
+  }
+}

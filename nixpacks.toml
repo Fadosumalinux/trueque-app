@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["cd client && npm install && npm run build && cd ../server && npm install"]
+
+[start]
+cmd = "cd server && DATABASE_URL=\"file:./dev.db\" npx prisma generate && DATABASE_URL=\"file:./dev.db\" npx prisma db push && DATABASE_URL=\"file:./dev.db\" npx prisma db seed && DATABASE_URL=\"file:./dev.db\" npx tsx src/index.ts"
