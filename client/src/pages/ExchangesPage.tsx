@@ -20,7 +20,7 @@ export default function ExchangesPage() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 16, maxWidth: 520, margin: "0 auto", boxSizing: "border-box" }}>
+    <div className="page">
       <header style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold }}>Acuerdos</div>
         <div style={{ fontSize: 12, color: colors.textDim }}>Tus pactos en curso y sus estados</div>

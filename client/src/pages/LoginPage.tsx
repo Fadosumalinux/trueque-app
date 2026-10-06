@@ -40,7 +40,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, display: "flex", flexDirection: "column", padding: 28, boxSizing: "border-box" }}>
+    <div className="page page--center" style={{ padding: 28, paddingTop: "calc(28px + var(--safe-t))" }}>
       <div style={{ marginTop: 40, textAlign: "center" }}>
         <div style={{ fontSize: 56 }}>🤝</div>
         <h1 style={{ margin: "8px 0 4px", color: colors.gold, fontSize: 28 }}>

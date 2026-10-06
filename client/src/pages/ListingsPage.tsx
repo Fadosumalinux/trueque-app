@@ -11,7 +11,7 @@ export default function ListingsPage() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 16, maxWidth: 520, margin: "0 auto", boxSizing: "border-box" }}>
+    <div className="page">
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold }}>Mis pactos</div>

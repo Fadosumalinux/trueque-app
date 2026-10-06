@@ -15,7 +15,7 @@ export default function ModesPage({ onBack }: { onBack: () => void }) {
   useEffect(() => { load(); }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 16, maxWidth: 520, margin: "0 auto", boxSizing: "border-box" }}>
+    <div className="page">
       <button onClick={onBack} style={{ background: "transparent", border: "none", color: colors.textDim, fontSize: 13, cursor: "pointer", padding: 0 }}>
         ← Volver
       </button>

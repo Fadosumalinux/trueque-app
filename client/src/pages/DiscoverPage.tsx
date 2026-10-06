@@ -39,7 +39,7 @@ export default function DiscoverPage() {
   const next = stack[1];
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 16, maxWidth: 520, margin: "0 auto", boxSizing: "border-box" }}>
+    <div className="page">
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold }}>Descubrir</div>
@@ -94,7 +94,7 @@ export default function DiscoverPage() {
           <div style={{ ...swipeCardStyle, position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
             <span style={{ fontSize: 44 }}>🌾</span>
             <div style={{ color: colors.textDim, fontSize: 14 }}>No hay más pactos por ahora.</div>
-            <button onClick={load} style={{ background: colors.accent, border: "none", borderRadius: 999, padding: "10px 18px", fontWeight: 700, color: "#171412", cursor: "pointer" }}>
+            <button onClick={load} style={{ background: colors.accent, border: "none", borderRadius: 999, padding: "0 18px", minHeight: 44, fontWeight: 700, color: "#171412", cursor: "pointer" }}>
               Ver más
             </button>
           </div>
@@ -167,7 +167,11 @@ function chip(active: boolean): React.CSSProperties {
     color: active ? "#171412" : colors.textDim,
     border: `1px solid ${active ? colors.accent : colors.border}`,
     borderRadius: 999,
-    padding: "8px 14px",
+    padding: "0 16px",
+    minHeight: 44,
+    display: "inline-flex",
+    alignItems: "center",
+    flexShrink: 0,
     fontWeight: 700,
     fontSize: 13,
     cursor: "pointer",

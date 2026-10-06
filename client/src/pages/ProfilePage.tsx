@@ -41,7 +41,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 16, maxWidth: 520, margin: "0 auto", boxSizing: "border-box" }}>
+    <div className="page">
       <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold, marginBottom: 12 }}>Mi perfil</div>
 
       <div style={{ ...card, display: "flex", gap: 14, alignItems: "center" }}>

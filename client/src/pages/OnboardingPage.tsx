@@ -68,7 +68,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text, padding: 24, boxSizing: "border-box", maxWidth: 520, margin: "0 auto" }}>
+    <div className="page page--pad24" style={{ maxWidth: 520, margin: "0 auto" }}>
       <h2 style={{ color: colors.gold, margin: "8px 0" }}>Tu perfil, {user?.displayName}</h2>
       <div style={{ color: colors.textDim, fontSize: 13, marginBottom: 20 }}>Completá tu perfil para empezar a descubrir pactos.</div>
 

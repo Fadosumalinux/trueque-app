@@ -12,12 +12,14 @@ export default function MainApp() {
   const [tab, setTab] = useState<Tab>("discover");
 
   return (
-    <div style={{ minHeight: "100vh", paddingBottom: 72 }}>
-      {tab === "discover" && <DiscoverPage />}
-      {tab === "listings" && <ListingsPage />}
-      {tab === "exchanges" && <ExchangesPage />}
-      {tab === "wallet" && <WalletPage />}
-      {tab === "profile" && <ProfilePage />}
+    <div className="app-shell">
+      <main className="app-main">
+        {tab === "discover" && <DiscoverPage />}
+        {tab === "listings" && <ListingsPage />}
+        {tab === "exchanges" && <ExchangesPage />}
+        {tab === "wallet" && <WalletPage />}
+        {tab === "profile" && <ProfilePage />}
+      </main>
       <BottomNav tab={tab} onChange={setTab} />
     </div>
   );
