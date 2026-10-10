@@ -129,6 +129,9 @@ model Listing {
   description String
   acceptTerms String      // qué acepta a cambio (trueque de X, o Y fieles)
   estimatedValue Float     // valor zonal calculado = category.baseValue * zone.multiplier
+  // precio que pone el vendedor (livre). null = "sin precio fijo" (trueque abierto)
+  priceAmount   Float?
+  priceNote     String?
   currency    String      @default("credits") // "credits" | "barter" | "both"
   // reglas efectivas del trato (copia de su modo en el momento de publicar)
   audienceScope   String?  // "public" | "verified" | "zone" | "invite"

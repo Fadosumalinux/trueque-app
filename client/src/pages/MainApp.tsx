@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BottomNav from "../components/BottomNav";
+import Tutorial from "../components/Tutorial";
 import DiscoverPage from "./DiscoverPage";
 import ListingsPage from "./ListingsPage";
 import ExchangesPage from "./ExchangesPage";
@@ -21,6 +22,7 @@ export default function MainApp() {
         {tab === "profile" && <ProfilePage />}
       </main>
       <BottomNav tab={tab} onChange={setTab} />
+      <Tutorial tab={tab} />
     </div>
   );
 }

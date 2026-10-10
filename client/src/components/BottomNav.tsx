@@ -16,6 +16,7 @@ export default function BottomNav({ tab, onChange }: { tab: Tab; onChange: (t: T
           key={it.id}
           onClick={() => onChange(it.id)}
           className={`nav-btn${tab === it.id ? " nav-btn--on" : ""}`}
+          data-tut={`nav-${it.id}`}
           aria-current={tab === it.id ? "page" : undefined}
           title={it.hint}
         >

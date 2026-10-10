@@ -38,6 +38,8 @@ export const api = {
       return request<any[]>(`/listings${qs ? `?${qs}` : ""}`);
     },
     mine: () => request<any[]>("/listings/mine"),
+    suggestedPrice: (categoryId: string, zoneId?: string) =>
+      request<any>(`/listings/suggested-price?categoryId=${categoryId}${zoneId ? `&zoneId=${zoneId}` : ""}`),
     get: (id: string) => request<any>(`/listings/${id}`),
     create: (body: any) => request<any>("/listings", { method: "POST", body: JSON.stringify(body) }),
     update: (id: string, body: any) => request<any>(`/listings/${id}`, { method: "PUT", body: JSON.stringify(body) }),

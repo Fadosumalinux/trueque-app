@@ -17,7 +17,7 @@ export default function ListingsPage() {
           <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold }}>Mis pactos</div>
           <div style={{ fontSize: 12, color: colors.textDim }}>Lo que ofrecés y buscás</div>
         </div>
-        <button onClick={() => setShowForm(true)} style={{ background: colors.accent, border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, color: "#171412", cursor: "pointer" }}>
+        <button data-tut="publicar" onClick={() => setShowForm(true)} style={{ background: colors.accent, border: "none", borderRadius: 999, padding: "10px 16px", fontWeight: 700, color: "#171412", cursor: "pointer" }}>
           + Publicar
         </button>
       </header>

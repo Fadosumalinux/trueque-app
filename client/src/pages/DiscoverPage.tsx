@@ -5,45 +5,60 @@ import { colors, roleColor, verifiedBadge } from "../utils/theme";
 import type { Listing } from "../types";
 import ListingModal from "../components/ListingModal";
 
+type Suggested = { suggested: number; basis: string; samples: number; avg: number | null };
+
 export default function DiscoverPage() {
   const { user } = useAuth();
-  const [stack, setStack] = useState<Listing[]>([]);
+  const [items, setItems] = useState<Listing[]>([]);
   const [filters, setFilters] = useState({ type: "", categoryId: "" });
   const [categories, setCategories] = useState<any[]>([]);
   const [active, setActive] = useState<Listing | null>(null);
+  const [pin, setPin] = useState<Listing | null>(null);
   const [matchToast, setMatchToast] = useState<string | null>(null);
-  const dragX = useRef(0);
+  const [suggested, setSuggested] = useState<Record<string, Suggested>>({});
+  const loading = useRef(false);
 
-  const load = async () => {
-    const feed = await api.discovery.feed(filters.type ? { type: filters.type } : {});
-    setStack(feed);
+  const load = async (extra?: { type?: string; categoryId?: string }) => {
+    loading.current = true;
+    try {
+      const feed = await api.discovery.feed(extra);
+      setItems(feed);
+      // Precio sugerido por categoría (promedio real de lo publicado).
+      const cats = [...new Set(feed.map((l: any) => l.categoryId).filter(Boolean))] as string[];
+      setSuggested((prev) => {
+        const next = { ...prev };
+        void cats
+          .filter((c) => !next[c])
+          .forEach((c) =>
+            api.listings.suggestedPrice(c).then((r) => setSuggested((m) => ({ ...m, [c]: { suggested: r.suggested, basis: r.basis, samples: r.samples, avg: r.avg } }))).catch(() => {})
+          );
+        return next;
+      });
+    } finally {
+      loading.current = false;
+    }
   };
 
   useEffect(() => {
-    load();
+    load(filters.type || filters.categoryId ? filters : undefined);
     api.catalog.categories().then(setCategories);
-  }, [filters.type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.type, filters.categoryId]);
 
-  const swipe = async (direction: "like" | "pass") => {
-    const top = stack[0];
-    if (!top) return;
-    setStack((s) => s.slice(1));
+  const react = async (l: Listing, direction: "like" | "pass") => {
     try {
-      const res = await api.discovery.like(top.id, direction);
-      if (res.match) setMatchToast(`✨ ¡Match con ${top.user.displayName}!`);
+      const res = await api.discovery.like(l.id, direction);
+      if (res.match) setMatchToast(`✨ ¡Match con ${l.user.displayName}!`);
     } catch {}
-    if (stack.length <= 2) load();
+    setItems((cur) => cur.filter((x) => x.id !== l.id));
   };
-
-  const top = stack[0];
-  const next = stack[1];
 
   return (
     <div className="page">
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 800, color: colors.gold }}>Descubrir</div>
-          <div style={{ fontSize: 12, color: colors.textDim }}>¿Qué te llama la atención hoy?</div>
+          <div style={{ fontSize: 12, color: colors.textDim }}>El muro del barrio: trato y precio claros</div>
         </div>
         <div style={{ fontSize: 12, color: colors.textDim }}>
           <b style={{ color: colors.gold }}>{user?.credits?.toFixed(0)}</b> 🪙
@@ -53,7 +68,7 @@ export default function DiscoverPage() {
       <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "10px 0", marginBottom: 6 }}>
         <button
           onClick={() => setFilters((f) => ({ ...f, type: "" }))}
-          style={chip(filters.type === "")}
+          style={chip(filters.type === "" && !filters.categoryId)}
         >
           Todo
         </button>
@@ -67,43 +82,108 @@ export default function DiscoverPage() {
           <button
             key={c.id}
             onClick={() => setFilters((f) => ({ ...f, categoryId: f.categoryId === c.id ? "" : c.id }))}
-            style={chip(filters.categoryId === c.id)}
+            style={chip(filters.categoryId === c.id && !filters.type)}
           >
             {c.emoji} {c.name}
           </button>
         ))}
       </div>
 
-      <div style={{ height: "calc(100vh - 260px)", minHeight: 420, position: "relative" }}>
-        {next && (
-          <div style={{ ...swipeCardStyle, transform: "translateY(12px) scale(0.96)", position: "absolute", inset: 0, opacity: 0.6 }}>
-            <EmojiCard listing={next} />
-          </div>
-        )}
-        {top ? (
-          <div
-            style={{ ...swipeCardStyle, position: "absolute", inset: 0, transform: `translateX(${dragX.current}px) rotate(${dragX.current / 30}deg)`, transition: dragX.current ? "none" : "transform .25s" }}
-            onClick={() => setActive(top)}
-          >
-            <EmojiCard listing={top} />
-            <div style={{ position: "absolute", top: 12, right: 12, fontSize: 12, background: "rgba(0,0,0,.5)", borderRadius: 999, padding: "4px 10px", color: colors.textDim }}>
-              Tocá para ver más
-            </div>
-          </div>
-        ) : (
-          <div style={{ ...swipeCardStyle, position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
-            <span style={{ fontSize: 44 }}>🌾</span>
-            <div style={{ color: colors.textDim, fontSize: 14 }}>No hay más pactos por ahora.</div>
-            <button onClick={load} style={{ background: colors.accent, border: "none", borderRadius: 999, padding: "0 18px", minHeight: 44, fontWeight: 700, color: "#171412", cursor: "pointer" }}>
-              Ver más
-            </button>
-          </div>
-        )}
-      </div>
+      <div className="wall" data-tut="wall">
+        {items.map((l, i) => {
+          const sug = l.categoryId ? suggested[l.categoryId] : undefined;
+          return (
+            <div key={l.id} className="wall-card">
+              <div className="wall-card__tile" onClick={() => setActive(l)}>
+                {photosOf(l)[0] ? (
+                  <img src={photosOf(l)[0]} alt="" loading="lazy" />
+                ) : (
+                  <span aria-hidden="true">{l.category?.emoji || "🤝"}</span>
+                )}
+                {(isAuction(l) || (l as any).minBid != null) && (
+                  <span className="wall-card__badge">⚖️ Subasta</span>
+                )}
+              </div>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: 28, marginTop: 14 }}>
-        <RoundBtn label="Pasar" emoji="✕" color={colors.red} onClick={() => swipe("pass")} />
-        <RoundBtn label="Me gusta" emoji="♥" color={colors.green} onClick={() => swipe("like")} />
+              <div className="wall-card__body" onClick={() => setActive(l)}>
+                <div className="wall-card__title">
+                  {l.title}
+                  {l.user?.verificationStatus === "verified" && (
+                    <span style={verifiedBadge}>✓</span>
+                  )}
+                </div>
+                <div className="wall-card__meta">
+                  {l.category?.emoji} {l.category?.name} · {l.zone?.name} · {l.type === "want" ? "🙋 busca" : "🛍️ ofrece"}
+                </div>
+              </div>
+
+              <div className="wall-card__prices" onClick={() => setActive(l)}>
+                {(l as any).priceAmount != null ? (
+                  <>
+                    <span className="wall-card__seller">{(l as any).priceAmount} 🪙</span>
+                    <span className="wall-card__app">
+                      {sug ? (
+                        <>
+                          La app sugiere <b>{sug.suggested} 🪙</b>
+                          {sug.samples > 1 && <span> ({sug.samples} publicadas)</span>}
+                        </>
+                      ) : (
+                        <>
+                          Valor de la app <b>≈ {l.estimatedValue} 🪙</b>
+                        </>
+                      )}
+                    </span>
+                  </>
+                ) : (
+                  <span className="wall-card__app">
+                    Sin precio fijo · valor de la app <b>≈ {l.estimatedValue} 🪙</b>
+                  </span>
+                )}
+              </div>
+
+              {!isAuction(l) && (
+                <div className="wall-card__actions">
+                  <button
+                    className="wall-act wall-act--pass"
+                    onClick={() => react(l, "pass")}
+                    data-tut={i === 0 ? "pass" : undefined}
+                  >
+                    ✕
+                  </button>
+                  <button className="wall-act wall-act--info" onClick={() => setActive(l)} title="Ver detalle">
+                    👁
+                  </button>
+                  <button
+                    className="wall-act wall-act--like"
+                    onClick={() => react(l, "like")}
+                    data-tut={i === 0 ? "like" : undefined}
+                  >
+                    ♥
+                  </button>
+                </div>
+              )}
+              <div className="wall-card__seller-info">
+                <span>{l.user?.displayName}</span>
+                <span style={{ color: roleColor(l.user?.role) }}>★ {l.user?.ratingAvg?.toFixed(1)}</span>
+              </div>
+            </div>
+          );
+        })}
+        {items.length === 0 && (
+          <div className="wall-empty">
+            <span style={{ fontSize: 44 }}>🌾</span>
+            <div>No hay pactos con esos filtros, por ahora.</div>
+            {filters.type || filters.categoryId ? (
+              <button className="chip" onClick={() => setFilters({ type: "", categoryId: "" })}>
+                Mostrar todo
+              </button>
+            ) : (
+              <button className="chip" onClick={() => load()}>
+                Recargar muro
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {matchToast && (
@@ -112,53 +192,24 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {active && <ListingModal listing={active} onClose={() => { setActive(null); }} />}
+      {(active || pin) && <ListingModal listing={active || pin!} onClose={() => { setActive(null); setPin(null); }} />}
     </div>
   );
 }
 
-function EmojiCard({ listing }: { listing: Listing }) {
-  const isAuction = listing.mode?.type === "auction" || !!listing.auctionEnd;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 72, background: colors.surface2, borderRadius: 14, position: "relative" }}>
-        {listing.category.emoji}
-        {isAuction && (
-          <div style={{ position: "absolute", top: 10, left: 10, background: colors.gold, color: "#171412", fontWeight: 800, fontSize: 11, borderRadius: 999, padding: "4px 10px" }}>
-            ⚖️ SUBASTA
-          </div>
-        )}
-      </div>
-      <div style={{ padding: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-          <b style={{ fontSize: 18 }}>{listing.title}</b>
-          {listing.user.verificationStatus === "verified" && <span style={verifiedBadge}>✓ verificado</span>}
-        </div>
-        <div style={{ color: colors.textDim, fontSize: 13 }}>
-          {listing.category.emoji} {listing.category.name} · {listing.zone.name} · {listing.type === "want" ? "🙋 busca" : "🛍️ ofrece"}
-          {isAuction && listing.bids?.[0] && <span style={{ color: colors.gold, fontWeight: 700 }}> · {listing.bids[0].amount} 🪙 top</span>}
-        </div>
-        <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 13, color: colors.textDim }}>
-            {listing.user.displayName} <span style={{ color: roleColor(listing.user.role) }}>· ★ {listing.user.ratingAvg.toFixed(1)}</span>
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 800, color: colors.gold }}>
-            ≈ {listing.estimatedValue} 🪙 valor zonal
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+function photosOf(l: Listing): string[] {
+  try {
+    const p = (l as any).photos;
+    if (!p) return [];
+    return typeof p === "string" ? JSON.parse(p) : p;
+  } catch {
+    return [];
+  }
 }
 
-const swipeCardStyle: React.CSSProperties = {
-  background: colors.surface,
-  border: `1px solid ${colors.border}`,
-  borderRadius: 22,
-  overflow: "hidden",
-  cursor: "pointer",
-  userSelect: "none",
-};
+function isAuction(l: Listing): boolean {
+  return l.mode?.type === "auction" || !!l.auctionEnd;
+}
 
 function chip(active: boolean): React.CSSProperties {
   return {
@@ -176,15 +227,4 @@ function chip(active: boolean): React.CSSProperties {
     fontSize: 13,
     cursor: "pointer",
   };
-}
-
-function RoundBtn({ label, emoji, color, onClick }: { label: string; emoji: string; color: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "transparent", border: "none", cursor: "pointer" }}>
-      <span style={{ width: 62, height: 62, borderRadius: "50%", background: colors.surface, border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, color }}>
-        {emoji}
-      </span>
-      <span style={{ fontSize: 11, color: colors.textDim, fontWeight: 700 }}>{label}</span>
-    </button>
-  );
 }

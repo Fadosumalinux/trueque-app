@@ -135,13 +135,20 @@ export default function ListingModal({ listing, onClose }: { listing: Listing; o
               )}
             </div>
 
-            <div style={{ ...card, marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", borderColor: colors.accentSoft }}>
-              <span style={{ fontSize: 13, color: colors.textDim }}>Valor zonal de referencia</span>
-              <span style={{ fontWeight: 800, color: colors.gold, fontSize: 18 }}>≈ {live.estimatedValue} 🪙</span>
+            <div style={{ ...card, marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", borderColor: colors.accentSoft, flexWrap: "wrap", gap: 8 }}>
+              <span style={{ fontSize: 13, color: colors.textDim }}>
+                {live.priceAmount != null ? "💰 Precio del vendedor" : "Valor zonal de referencia"}
+              </span>
+              <span style={{ fontWeight: 800, color: colors.gold, fontSize: 18 }}>
+                {live.priceAmount != null ? `${live.priceAmount} 🪙` : `≈ ${live.estimatedValue} 🪙`}
+              </span>
+              {live.priceNote && <span style={{ fontSize: 11, color: colors.green, width: "100%" }}>{live.priceNote}</span>}
             </div>
 
             <div style={{ marginTop: 8, fontSize: 11, color: colors.textDim }}>
-              El valor zonal es el "seguro" del pacto: sobre él se calcula la comisión (el valor de un café), repartida entre las partes y destinada a validación de identidad y soporte.
+              {live.priceAmount != null
+                ? `El valor zonal (≈ ${live.estimatedValue} 🪙) es el "seguro" del pacto: sobre él se calcula la comisión (el valor de un café), no sobre el precio que fija el vendedor.`
+                : "El valor zonal es el \"seguro\" del pacto: sobre él se calcula la comisión (el valor de un café), repartida entre las partes y destinada a validación de identidad y soporte."}
             </div>
 
             {user && !isOwner && !isAuction && (

@@ -47,6 +47,58 @@ router.get("/mine", authMiddleware, async (req: AuthRequest, res) => {
   res.json(listings.map((l) => ({ ...l, likeCount: l.likes.length })));
 });
 
+// Precio sugerido por la app: promedio real de lo publicado en esa categoría
+// (+ valor zonal de referencia). No inventa "el valor real del mercado": muestra
+// de dónde sale el número y con cuántas muestras.
+router.get("/suggested-price", authMiddleware, async (req: AuthRequest, res) => {
+  const { categoryId, zoneId } = req.query;
+  if (!categoryId) {
+    res.status(400).json({ error: "Falta categoryId" });
+    return;
+  }
+  const [category, zone] = await Promise.all([
+    prisma.category.findUnique({ where: { id: categoryId as string } }),
+    zoneId
+      ? prisma.zone.findUnique({ where: { id: zoneId as string } })
+      : Promise.resolve(null),
+  ]);
+  if (!category) {
+    res.status(404).json({ error: "Categoría no encontrada" });
+    return;
+  }
+  const zonal = computeZonalValue(category.baseValue, (zone?.multiplier ?? 1) as number);
+
+  const sameCat = await prisma.listing.findMany({
+    where: { categoryId: categoryId as string, status: "active", priceAmount: { not: null } },
+    select: { priceAmount: true, zoneId: true },
+  });
+  const sameZone = zone ? sameCat.filter((l) => l.zoneId === zone.id) : [];
+
+  const stats = (rows: typeof sameCat) => {
+    const xs = rows.map((r) => r.priceAmount as number).sort((a, b) => a - b);
+    if (!xs.length) return null;
+    const avg = xs.reduce((a, b) => a + b, 0) / xs.length;
+    return { avg: Math.round(avg), min: xs[0], max: xs[xs.length - 1], samples: xs.length };
+  };
+
+  const inZone = stats(sameZone);
+  const inCat = stats(sameCat);
+  // con 3+ muestras en la zona se usa el promedio local; si no, el de la categoría
+  const base = inZone && inZone.samples >= 3 ? inZone : inCat;
+  const basis = base === inZone ? "promedio-zona" : base === inCat ? "promedio-categoria" : "valor-zonal";
+
+  res.json({
+    suggested: Math.round(base ? base.avg : zonal),
+    basis,
+    samples: base ? base.samples : 0,
+    avg: inCat?.avg ?? null,
+    min: inCat?.min ?? null,
+    max: inCat?.max ?? null,
+    zonal: Math.round(zonal),
+    category: { name: category.name, emoji: category.emoji },
+  });
+});
+
 router.get("/:id", authMiddleware, async (req: AuthRequest, res) => {
   await resolveAuction(req.params.id as string);
   const listing = await prisma.listing.findUnique({
@@ -67,7 +119,7 @@ router.get("/:id", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 router.post("/", authMiddleware, async (req: AuthRequest, res) => {
-  const { categoryId, zoneId, type = "offer", title, description, acceptTerms, currency = "both", photos, modeId } = req.body;
+  const { categoryId, zoneId, type = "offer", title, description, acceptTerms, currency = "both", photos, modeId, priceAmount, priceNote } = req.body;
   if (!categoryId || !zoneId || !title) {
     res.status(400).json({ error: "Faltan datos obligatorios (categoría, zona, título)" });
     return;
@@ -119,6 +171,8 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
       currency,
       photos: photos ? JSON.stringify(photos) : "[]",
       estimatedValue: computeZonalValue(category.baseValue, zone.multiplier),
+      priceAmount: priceAmount != null && priceAmount !== "" ? Number(priceAmount) : null,
+      priceNote: priceNote || null,
       ...modeRules,
     },
     include: { category: true, zone: true },
@@ -136,7 +190,7 @@ router.put("/:id", authMiddleware, async (req: AuthRequest, res) => {
     res.status(403).json({ error: "No puedes modificar este listado" });
     return;
   }
-  const { title, description, acceptTerms, currency, status, photos, categoryId, zoneId, modeId, audienceScope, minBid, maxBid, bidStep, auctionStart, auctionEnd, maxParticipants } = req.body;
+  const { title, description, acceptTerms, currency, status, photos, categoryId, zoneId, modeId, audienceScope, minBid, maxBid, bidStep, auctionStart, auctionEnd, maxParticipants, priceAmount, priceNote } = req.body;
   let estimatedValue = listing.estimatedValue;
   if (categoryId || zoneId) {
     const [category, zone] = await Promise.all([
@@ -157,6 +211,8 @@ router.put("/:id", authMiddleware, async (req: AuthRequest, res) => {
       zoneId: zoneId ?? undefined,
       estimatedValue,
       photos: photos ? JSON.stringify(photos) : undefined,
+      priceAmount: priceAmount === null ? null : priceAmount != null ? Number(priceAmount) : undefined,
+      priceNote: priceNote ?? undefined,
       modeId: modeId ?? undefined,
       audienceScope: audienceScope ?? undefined,
       minBid: minBid != null ? Number(minBid) : undefined,

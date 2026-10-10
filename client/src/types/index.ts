@@ -90,6 +90,9 @@ export interface Listing {
   bids?: Bid[];
   likeCount?: number;
   category: Category;
+  categoryId?: string;
+  priceAmount?: number | null;
+  priceNote?: string | null;
   zone: { id: string; name: string; multiplier: number };
   user: {
     id: string;
